@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YoyangScript</title>
+
+    <!-- 网站图标 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%234f7df3'/><text x='16' y='22' text-anchor='middle' font-size='16' font-weight='bold' fill='white' font-family='Arial,sans-serif'>YS</text></svg>">
+
+    <!-- 主样式表 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- 内联后备样式（含默认背景） -->
+    <style>
+        /* 默认星空背景 */
+        body {
+            font-family: system-ui, sans-serif;
+            background: url(data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231a1a2e'/%3E%3Cstop offset='50%25' stop-color='%2316213e'/%3E%3Cstop offset='100%25' stop-color='%230f3460'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='800' height='600' fill='url(%23g)'/%3E%3Ccircle cx='100' cy='80' r='2' fill='rgba(255,255,255,0.5)'/%3E%3Ccircle cx='300' cy='150' r='1.5' fill='rgba(255,255,255,0.4)'/%3E%3Ccircle cx='600' cy='200' r='2.5' fill='rgba(255,255,255,0.6)'/%3E%3Ccircle cx='750' cy='100' r='1' fill='rgba(255,255,255,0.3)'/%3E%3Ccircle cx='200' cy='400' r='2' fill='rgba(255,255,255,0.5)'/%3E%3Ccircle cx='500' cy='500' r='1.5' fill='rgba(255,255,255,0.4)'/%3E%3C/svg%3E) center / cover no-repeat fixed;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .topbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 20px; background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .topbar h1 { font-size: 20px; }
+        .topbar-right {
+            display: flex; align-items: center; gap: 6px; position: relative;
+        }
+        .menu-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .running-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 4px 10px; border-radius: 14px; cursor: pointer;
+            font-size: 16px; transition: background 0.2s; line-height: 1;
+        }
+        .running-btn:hover { background: rgba(255,255,255,0.2); }
+        .menu-dropdown {
+            position: absolute; top: 48px; right: 10px;
+            background: rgba(20,20,40,0.95); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 12px;
+            padding: 8px 0; min-width: 160px; display: none; z-index: 100;
+        }
+        .menu-dropdown.show { display: block; }
+        .menu-dropdown button {
+            display: block; width: 100%; background: transparent; border: none;
+            color: white; padding: 12px 16px; text-align: left; font-size: 14px; cursor: pointer;
+        }
+        .menu-dropdown button:hover { background: rgba(255,255,255,0.1); }
+        .main-content { flex: 1; overflow-y: auto; padding: 16px; display: none; }
+        .main-content.active { display: block; }
+        .script-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 14px;
+        }
+        .script-card {
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+            padding: 16px 12px; text-align: center; position: relative;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        .script-card .icon { font-size: 28px; margin-bottom: 6px; opacity: 0.8; }
+        .script-card .name { font-size: 14px; word-break: break-word; margin: 6px 0; }
+        .script-card .size { font-size: 11px; opacity: 0.6; }
+        .script-card .actions { margin-top: 10px; display: flex; gap: 6px; justify-content: center; }
+        .btn {
+            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 5px 14px; border-radius: 20px; font-size: 12px; cursor: pointer;
+        }
+        .btn:hover { background: rgba(255,255,255,0.25); }
+        .btn-danger { background: #e74c4c; border-color: #e74c4c; }
+        .btn-primary { background: #4f7df3; border-color: #4f7df3; }
+        .batch-check { position: absolute; top: 8px; left: 8px; display: none; }
+        .batch-mode .batch-check { display: block; }
+        .batch-bar {
+            display: none; text-align: center; padding: 10px;
+            background: rgba(0,0,0,0.5); margin-top: 10px;
+        }
+        .batch-mode .batch-bar { display: block; }
+        .bottom-nav {
+            display: flex; justify-content: space-around; align-items: center;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255,255,255,0.1); padding: 8px 0;
+            position: fixed; bottom: 0; width: 100%; z-index: 10;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            color: rgba(255,255,255,0.6); font-size: 11px; background: none; border: none; cursor: pointer;
+        }
+        .nav-item.active { color: white; }
+        .nav-item span { font-size: 20px; }
+        .toast {
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+            color: white; padding: 10px 24px; border-radius: 30px;
+            font-size: 14px; opacity: 0; transition: opacity 0.3s; z-index: 999; pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+        .loader {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            justify-content: center; align-items: center; z-index: 998;
+        }
+        .loader.active { display: flex; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white; border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 运行面板 */
+        #runningPanel {
+            display: none; position: absolute; top: 48px; right: 0;
+            background: rgba(20,20,40,0.95); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 12px;
+            padding: 8px 0; min-width: 200px; z-index: 101;
+            max-height: 300px; overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        #runningPanel.show { display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="topbar">
+        <h1>🧰 YoyangScript</h1>
+        <div class="topbar-right">
+            <button class="running-btn" id="runningBtn" title="查看运行中的脚本">📋</button>
+            <button class="running-btn" id="stopAllBtn" title="停止全部脚本">🗑️</button>
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <div class="menu-dropdown" id="menuDropdown">
+                <button id="menuAddScript">📄 添加脚本</button>
+                <button id="menuChangeBg">🖼️ 换背景</button>
+                <button id="menuBatchManage">✅ 批量管理</button>
+                <hr style="border-color:rgba(255,255,255,0.1); margin:4px 0;">
+                <button id="menuCheckUpdate">🔄 检查更新</button>
+            </div>
+            <div id="runningPanel"></div>
+        </div>
+    </div>
+
+    <div class="main-content active" id="page-home">
+        <div class="script-grid" id="scriptGrid"></div>
+        <div class="batch-bar" id="batchBar">
+            <button class="btn btn-danger" id="batchDeleteBtn">🗑️ 批量删除</button>
+            <button class="btn" id="cancelBatchBtn">取消</button>
+        </div>
+    </div>
+    <div class="main-content" id="page-tools" style="text-align:center; padding:40px; opacity:0.6;">🔧 工具箱（即将上线）</div>
+    <div class="main-content" id="page-user" style="text-align:center; padding:40px;">
+        <button class="btn btn-primary" id="userChangeBg">🖼️ 更换背景</button>
+        <p style="margin-top:16px; opacity:0.7;">YoyangScript <span id="versionDisplay">v2.0</span><br>轻量脚本管理器</p>
+        <p style="font-size:11px; opacity:0.4; margin-top:8px;">作者：冯凯颖 (2026) · MIT 协议开源</p>
+    </div>
+    <div class="bottom-nav">
+        <button class="nav-item active" data-page="home"><span>🏠</span>主页</button>
+        <button class="nav-item" data-page="tools"><span>🧰</span>工具</button>
+        <button class="nav-item" data-page="user"><span>👤</span>用户</button>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div class="loader" id="loader"><div class="spinner"></div></div>
+    <input type="file" id="fileInput" accept=".sh,.py,.js,.pl,.rb,.lua,.bash,.zsh,.txt,*/*" style="display:none">
+
+    <!-- 版本更新模态框 -->
+    <div id="update-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:2000; justify-content:center; align-items:center;">
+        <div style="background:#1e1e2e; color:white; padding:24px; border-radius:16px; max-width:420px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+            <h2 id="update-title" style="margin:0 0 16px 0; font-size:18px;">🔔 发现新版本</h2>
+            <div style="display:flex; justify-content:center; align-items:center; gap:16px; margin-bottom:16px; padding:12px; background:rgba(255,255,255,0.05); border-radius:10px;">
+                <div style="text-align:center;">
+                    <div style="font-size:11px; opacity:0.6; margin-bottom:4px;">当前版本</div>
+                    <div id="update-current" style="font-size:18px; font-weight:bold; opacity:0.7;">v2.0.0</div>
+                </div>
+                <div style="font-size:20px;">→</div>
+                <div style="text-align:center;">
+                    <div style="font-size:11px; opacity:0.6; margin-bottom:4px;">最新版本</div>
+                    <div id="update-latest" style="font-size:18px; font-weight:bold; color:#4f7df3;">v2.1.0</div>
+                </div>
+            </div>
+            <div id="update-date" style="font-size:11px; opacity:0.5; margin-bottom:12px;"></div>
+            <div id="update-content" style="max-height:200px; overflow-y:auto; margin-bottom:16px; padding:10px; background:rgba(0,0,0,0.2); border-radius:8px; font-size:13px; line-height:1.6; white-space:pre-wrap;"></div>
+            <label style="display:flex; align-items:center; gap:8px; margin-bottom:14px; font-size:13px; opacity:0.8;">
+                <input type="checkbox" id="update-ignore-5days"> 5天内不再提醒
+            </label>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <a id="update-manual" href="#" style="font-size:12px; opacity:0.5; cursor:pointer;">手动下载</a>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn" id="update-cancel">取消</button>
+                    <button class="btn btn-primary" id="update-do">立即更新</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 外部 JS 模块 -->
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bgManager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/scriptManager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+
+    <script>
+        // 主启动逻辑
+        (function() {
+            if (typeof UI !== 'undefined' && typeof ScriptManager !== 'undefined' && typeof BgManager !== 'undefined') {
+                const sm = new ScriptManager();
+                const ui = new UI(sm, BgManager);
+                ui.init();
+            } else {
+                console.warn('外部JS模块未加载，启用内联后备模式');
+                activateFallback();
+            }
+        })();
+
+        // 完整后备应用（当外部模块缺失时使用）
+        function activateFallback() {
+            function escapeHtml(text) {
+                const map = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' };
+                return text.replace(/[&<>"']/g, m => map[m]);
+            }
+            const Api = {
+                async getScripts() {
+                    const res = await fetch('/list_scripts');
+                    if (!res.ok) throw new Error('加载失败');
+                    return await res.json();
+                },
+                async uploadScript(file) {
+                    const form = new FormData();
+                    form.append('script_file', file);
+                    const res = await fetch('/upload_script', { method: 'POST', body: form });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || '上传失败');
+                    return data;
+                },
+                async deleteScript(name) {
+                    const res = await fetch('/delete_script', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ script: name })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || '删除失败');
+                    return data;
+                },
+                async runScript(name) {
+                    const res = await fetch('/run_script', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ script: name })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || '启动失败');
+                    return data;
+                },
+                async getBackground() {
+                    const res = await fetch('/api/get-background');
+                    if (!res.ok) throw new Error('获取背景失败');
+                    const data = await res.json();
+                    return data.bg_url;
+                },
+                async uploadBackground(file) {
+                    const form = new FormData();
+                    form.append('bg_file', file);
+                    const res = await fetch('/api/set-background', { method: 'POST', body: form });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || '上传背景失败');
+                    return data.bg_url;
+                },
+                async checkUpdate() {
+                    const res = await fetch('/api/check-update');
+                    if (!res.ok) throw new Error('检查更新失败');
+                    return await res.json();
+                },
+                async getRunningScripts() {
+                    const res = await fetch('/running_scripts');
+                    if (!res.ok) throw new Error('获取运行列表失败');
+                    const data = await res.json();
+                    return data.scripts;
+                }
+            };
+            class State {
+                constructor() {
+                    this.scripts = [];
+                    this.batchMode = false;
+                    this.selected = new Set();
+                }
+                async load() {
+                    const data = await Api.getScripts();
+                    this.scripts = data.scripts || [];
+                }
+                toggleBatch() {
+                    this.batchMode = !this.batchMode;
+                    if (!this.batchMode) this.selected.clear();
+                }
+                toggleSelect(name) {
+                    this.selected.has(name) ? this.selected.delete(name) : this.selected.add(name);
+                }
+                async deleteSelected() {
+                    const tasks = [...this.selected].map(n => Api.deleteScript(n));
+                    await Promise.all(tasks);
+                    await this.load();
+                    this.selected.clear();
+                }
+            }
+            const state = new State();
+            const toast = document.getElementById('toast');
+            const loader = document.getElementById('loader');
+            const grid = document.getElementById('scriptGrid');
+            const fileInput = document.getElementById('fileInput');
+            let toastTimer;
+            function showToast(msg, duration=2700) {
+                toast.textContent = msg;
+                toast.style.transition = 'opacity 0.3s ease';
+                toast.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                        toast.style.opacity = '';
+                    }, 300);
+                }, duration);
+            }
+            function showLoading(show) {
+                loader.classList.toggle('active', show);
+            }
+            function renderScripts() {
+                if (state.scripts.length === 0) {
+                    grid.innerHTML = '<div style="text-align:center; opacity:0.5; padding:40px;">📭 还没有脚本，点击菜单添加</div>';
+                    document.getElementById('batchBar').style.display = 'none';
+                    return;
+                }
+                let html = '';
+                state.scripts.forEach(scr => {
+                    const safe = escapeHtml(scr.name);
+                    const sizeKB = (scr.size / 1024).toFixed(1) + ' KB';
+                    const checked = state.selected.has(scr.name) ? 'checked' : '';
+                    html += `
+                    <div class="script-card" data-name="${safe}">
+                        <input type="checkbox" class="batch-check" ${checked} style="display:${state.batchMode ? 'block' : 'none'};">
+                        <div class="icon">📜</div>
+                        <div class="name">${safe}</div>
+                        <div class="size">${sizeKB}</div>
+                        <div class="actions">
+                            <button class="btn run-btn">▶️ 运行</button>
+                            <button class="btn btn-danger delete-btn">✕</button>
+                        </div>
+                    </div>`;
+                });
+                grid.innerHTML = html;
+                document.getElementById('batchBar').style.display = state.batchMode ? 'block' : 'none';
+            }
+
+            // 事件绑定
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const pageId = 'page-' + btn.dataset.page;
+                    document.querySelectorAll('.main-content').forEach(p => p.style.display = 'none');
+                    document.getElementById(pageId).style.display = 'block';
+                });
+            });
+            const menuBtn = document.getElementById('menuBtn');
+            const menuDropdown = document.getElementById('menuDropdown');
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menuDropdown.classList.toggle('show');
+            });
+            document.addEventListener('click', (e) => {
+                if (!menuBtn.contains(e.target) && !menuDropdown.contains(e.target))
+                    menuDropdown.classList.remove('show');
+            });
+            document.getElementById('menuAddScript').addEventListener('click', () => {
+                fileInput.click();
+                menuDropdown.classList.remove('show');
+            });
+            const changeBgHandler = async () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    showLoading(true);
+                    try {
+                        const serverUrl = await Api.uploadBackground(file);
+                        document.body.style.background = `url(${serverUrl}) center/cover no-repeat fixed`;
+                        localStorage.setItem('customBg', serverUrl);
+                        showToast('🖼️ 背景已更新（同步到服务器）');
+                    } catch (err) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                            const dataUrl = ev.target.result;
+                            document.body.style.background = `url(${dataUrl}) center/cover no-repeat fixed`;
+                            localStorage.setItem('customBg', dataUrl);
+                            showToast('🖼️ 背景已更新（仅本地）');
+                        };
+                        reader.readAsDataURL(file);
+                    } finally {
+                        showLoading(false);
+                    }
+                };
+                input.click();
+            };
+            document.getElementById('menuChangeBg').addEventListener('click', () => {
+                menuDropdown.classList.remove('show');
+                changeBgHandler();
+            });
+            document.getElementById('userChangeBg').addEventListener('click', changeBgHandler);
+            document.getElementById('menuBatchManage').addEventListener('click', () => {
+                state.toggleBatch();
+                renderScripts();
+                menuDropdown.classList.remove('show');
+            });
+            fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                showLoading(true);
+                try {
+                    await Api.uploadScript(file);
+                    await state.load();
+                    renderScripts();
+                    showToast('✅ 上传成功');
+                } catch (err) {
+                    showToast('❌ ' + err.message);
+                } finally {
+                    showLoading(false);
+                    fileInput.value = '';
+                }
+            });
+            grid.addEventListener('click', async (e) => {
+                const card = e.target.closest('.script-card');
+                if (!card) return;
+                const name = card.dataset.name;
+                if (e.target.classList.contains('delete-btn')) {
+                    if (!confirm(`确定删除 ${name}？`)) return;
+                    showLoading(true);
+                    try {
+                        await Api.deleteScript(name);
+                        await state.load();
+                        renderScripts();
+                        showToast(`🗑️ 已删除 "${name}"`);
+                    } catch (err) {
+                        showToast('❌ ' + err.message);
+                    } finally {
+                        showLoading(false);
+                    }
+                } else if (e.target.classList.contains('run-btn')) {
+                    showLoading(true);
+                    try {
+                        const res = await Api.runScript(name);
+                        if (res.started) {
+                            showToast(`🚀 已启动: ${name}`);
+                        } else {
+                            showToast('⚠️ 启动失败');
+                        }
+                    } catch (err) {
+                        showToast('❌ ' + err.message);
+                    } finally {
+                        showLoading(false);
+                    }
+                } else if (e.target.classList.contains('batch-check')) {
+                    state.toggleSelect(name);
+                    card.querySelector('.batch-check').checked = state.selected.has(name);
+                }
+            });
+            document.getElementById('batchDeleteBtn').addEventListener('click', async () => {
+                if (state.selected.size === 0) return;
+                if (!confirm(`确定删除选中的 ${state.selected.size} 个脚本？`)) return;
+                showLoading(true);
+                try {
+                    await state.deleteSelected();
+                    state.batchMode = false;
+                    renderScripts();
+                    showToast(`🗑️ 已删除 ${state.selected.size} 个脚本`);
+                } catch (err) {
+                    showToast('❌ ' + err.message);
+                } finally {
+                    showLoading(false);
+                }
+            });
+            document.getElementById('cancelBatchBtn').addEventListener('click', () => {
+                state.toggleBatch();
+                renderScripts();
+            });
+
+            // 运行中面板
+            const runningBtn = document.getElementById('runningBtn');
+            const runningPanel = document.getElementById('runningPanel');
+            runningBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (runningPanel.classList.contains('show')) {
+                    runningPanel.classList.remove('show');
+                    return;
+                }
+                try {
+                    const scripts = await Api.getRunningScripts();
+                    let html = '';
+                    if (scripts.length === 0) {
+                        html = '<div style="padding:12px; opacity:0.7;">暂无运行中的脚本</div>';
+                    } else {
+                        scripts.forEach(name => {
+                            html += `<div style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.1);">📜 ${escapeHtml(name)}</div>`;
+                        });
+                    }
+                    runningPanel.innerHTML = html;
+                    runningPanel.classList.add('show');
+                } catch (err) {
+                    showToast('❌ 无法获取运行列表');
+                }
+            });
+            document.addEventListener('click', (e) => {
+                if (!runningBtn.contains(e.target) && !runningPanel.contains(e.target)) {
+                    runningPanel.classList.remove('show');
+                }
+            });
+
+            // 更新检测
+            async function checkUpdateFallback() {
+                try {
+                    const info = await Api.checkUpdate();
+                    if (info && info.has_update) {
+                        const latest = info.latest_version;
+                        const ignored = localStorage.getItem('update_ignored');
+                        if (ignored) {
+                            const { version, until } = JSON.parse(ignored);
+                            if (version === latest && Date.now() < until) return;
+                        }
+                        const modal = document.getElementById('update-modal');
+                        document.getElementById('update-title').textContent = `发现新版本 v${latest}`;
+                        document.getElementById('update-content').textContent = info.changelog || '无更新说明';
+                        modal.style.display = 'flex';
+                        document.getElementById('update-cancel').onclick = () => {
+                            modal.style.display = 'none';
+                            if (document.getElementById('update-ignore-5days').checked) {
+                                const until = Date.now() + 5*24*60*60*1000;
+                                localStorage.setItem('update_ignored', JSON.stringify({ version: latest, until }));
+                            }
+                        };
+                        document.getElementById('update-do').onclick = () => {
+                            window.open(info.download_url || 'https://github.com/your-repo/releases/latest', '_blank');
+                        };
+                    }
+                } catch (e) { console.warn('更新检查失败', e); }
+            }
+
+            // 初始化背景
+            (async function initBg() {
+                try {
+                    const serverBg = await Api.getBackground();
+                    if (serverBg) {
+                        document.body.style.background = `url(${serverBg}) center/cover no-repeat fixed`;
+                        return;
+                    }
+                } catch(e) {}
+                // 若没有服务器背景，保留 body 上已设置的默认星空背景
+            })();
+
+            // 加载脚本列表
+            showLoading(true);
+            state.load().then(() => {
+                renderScripts();
+                checkUpdateFallback();
+            }).catch(err => {
+                showToast('❌ 加载失败: ' + err.message);
+            }).finally(() => {
+                showLoading(false);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# 悠扬工具箱 (YoyangScript) 使用教程
+
+---
+本工具箱目前只是雏形将会时不时更新
+## 一、准备工作
+
+### 1. 安装 Python
+本工具需要 Python 3.7 或更高版本。
+- **Windows**：访问 [python.org](https://www.python.org/downloads/) 下载安装包，安装时**务必勾选 “Add Python to PATH”**。
+- **macOS**：打开终端，输入 `brew install python3`（需先安装 Homebrew）。
+- **Linux**：使用系统包管理器，例如 `sudo apt install python3 python3-pip`。
+- **Android (Termux)**：在 Termux 中执行 `pkg install python`。
+
+### 2. 解压项目
+将 `yoyangscript.zip` 解压到你喜欢的目录（例如桌面或用户文件夹）。
+
+---
+
+## 二、启动工具箱
+
+根据你的操作系统选择对应方式：
+
+### Windows
+双击 `悠扬工具箱.bat`，系统会自动检查 Python 环境，如果缺少 Flask 会询问你是否安装，按 `Y` 并回车即可。
+
+### macOS / Linux
+打开终端，进入项目目录，执行：
+```bash
+bash 悠扬工具箱.sh

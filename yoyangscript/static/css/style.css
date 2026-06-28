@@ -1,0 +1,135 @@
+/*
+ YoyangScript 主样式表
+*/
+:root {
+    --bg-dark: #1a1a2e;
+    --glass-bg: rgba(255,255,255,0.08);
+    --glass-border: rgba(255,255,255,0.12);
+    --text-color: #fff;
+    --primary: #4f7df3;
+    --danger: #e74c4c;
+    --shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: system-ui, sans-serif;
+    min-height: 100vh;
+    background: var(--bg-dark) center/cover no-repeat fixed;
+    color: var(--text-color);
+    display: flex; flex-direction: column;
+}
+.topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 20px; background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border); z-index: 10;
+}
+.topbar h1 { font-size:20px; font-weight:600; }
+.topbar-right { display:flex; align-items:center; gap:6px; position:relative; }
+.menu-btn { background:none; border:none; color:white; font-size:24px; cursor:pointer; }
+.running-btn {
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+    color:white; padding:4px 10px; border-radius:14px; cursor:pointer;
+    font-size:16px; transition:background 0.2s; line-height:1;
+}
+.running-btn:hover { background:rgba(255,255,255,0.2); }
+.menu-dropdown {
+    position: absolute; top:52px; right:15px;
+    background: rgba(20,20,40,0.95); backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border); border-radius:14px;
+    padding:8px 0; min-width:180px; display:none; z-index:100; box-shadow: var(--shadow);
+}
+.menu-dropdown.show { display:block; }
+.menu-dropdown button {
+    display:block; width:100%; background:transparent; border:none;
+    color:white; padding:12px 20px; text-align:left; font-size:15px; cursor:pointer;
+}
+.menu-dropdown button:hover { background:rgba(255,255,255,0.1); }
+.main-content { flex:1; overflow-y:auto; padding:16px; display:none; }
+.main-content.active { display:block; }
+.script-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:16px; }
+.script-card {
+    background: var(--glass-bg); backdrop-filter: blur(8px);
+    border:1px solid var(--glass-border); border-radius:18px;
+    padding:18px 12px 12px; text-align:center; position:relative;
+    box-shadow: var(--shadow); transition: transform 0.2s;
+}
+.script-card:hover { transform: translateY(-3px); }
+.script-card .icon { font-size:30px; margin-bottom:6px; opacity:0.8; }
+.script-card .name { font-size:14px; word-break:break-word; margin:6px 0; }
+.script-card .size { font-size:11px; opacity:0.65; margin-bottom:8px; }
+.script-card .actions { display:flex; gap:6px; justify-content:center; margin-top:8px; }
+.btn {
+    background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2);
+    color:white; padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer;
+    transition: background 0.2s;
+}
+.btn:hover { background:rgba(255,255,255,0.25); }
+.btn-primary { background:var(--primary); border-color:var(--primary); }
+.btn-danger { background:var(--danger); border-color:var(--danger); }
+.btn-sm { padding:4px 10px; font-size:11px; }
+.batch-check { position:absolute; top:8px; left:8px; width:18px; height:18px; display:none; }
+.batch-mode .batch-check { display:block; }
+.batch-bar {
+    display:none; justify-content:center; gap:12px; padding:12px;
+    background:rgba(0,0,0,0.5); backdrop-filter:blur(8px); border-radius:16px; margin-top:12px;
+}
+.batch-mode .batch-bar { display:flex; }
+.bottom-nav {
+    display:flex; justify-content:space-around; align-items:center;
+    background:rgba(0,0,0,0.45); backdrop-filter:blur(14px);
+    border-top:1px solid var(--glass-border); padding:8px 0;
+    position:fixed; bottom:0; left:0; right:0; z-index:10;
+}
+.nav-item {
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    color:rgba(255,255,255,0.55); font-size:11px; background:none; border:none; cursor:pointer;
+}
+.nav-item.active { color:white; }
+.nav-item .nav-icon { font-size:20px; }
+.toast {
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+    background:rgba(0,0,0,0.8); color:white; padding:10px 28px; border-radius:30px;
+    font-size:14px; opacity:0; pointer-events:none; z-index:999; transition:opacity 0.3s;
+}
+.toast.show { opacity:1; }
+.loader {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4);
+    justify-content:center; align-items:center; z-index:998;
+}
+.loader.active { display:flex; }
+.spinner {
+    width:44px; height:44px; border:4px solid rgba(255,255,255,0.25);
+    border-top-color:white; border-radius:50%; animation:spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.empty-state { grid-column:1/-1; text-align:center; padding:50px 20px; opacity:0.6; }
+#log-panel {
+    position:fixed; bottom:80px; right:10px; width:300px; max-width:90vw;
+    height:300px; max-height:50vh; background:rgba(0,0,0,0.85);
+    color:#0f0; font-family:monospace; padding:10px; overflow-y:auto;
+    z-index:1000; border-radius:12px; border:1px solid rgba(255,255,255,0.2);
+    opacity:0; transition: opacity 0.5s ease; pointer-events:none;
+}
+#log-panel.show { opacity:1; pointer-events:auto; }
+#runningPanel {
+    display:none; position:absolute; top:48px; right:0;
+    background:rgba(20,20,40,0.95); backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,0.2); border-radius:12px;
+    padding:8px 0; min-width:200px; z-index:101;
+    max-height:300px; overflow-y:auto;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+}
+#runningPanel.show { display:block; }
+@media (min-width:768px) {
+    .script-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+    .main-content { padding:24px; }
+}
+@media (min-width:1200px) {
+    body { justify-content:center; padding-top:30px; }
+    .topbar, .main-content, .bottom-nav { max-width:1100px; width:100%; margin:0 auto; }
+    .topbar { border-radius:32px 32px 0 0; border:1px solid var(--glass-border); border-bottom:none; }
+    .bottom-nav { position:static; border-top:none; border-bottom:1px solid var(--glass-border); justify-content:center; gap:40px; }
+    .main-content { padding:24px 0; }
+    .script-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:24px; }
+}
